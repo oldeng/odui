@@ -1,0 +1,59 @@
+@import 'var';
+@menutabs-prefix-cls: ~"@{css-prefix}menutabs";
+
+.@{menutabs-prefix-cls} {
+    // display: block;
+    // position: absolute; 
+    // flex-direction: column;
+    // flex: auto;
+    // background: @layout-body-background;
+    // left: 0;
+    // top: 0;
+   
+    display: flex;
+    flex-direction: row;
+    &-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+
+    }
+    &-title {
+        display: block;
+        color: @menutabs-text-color;
+        ul {
+            display: flex;
+            justify-content: flex-start;
+        }
+        ul li {
+            position: relative;
+            width: 100px;
+            height: 70px;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+
+            div{
+                font-size: 18px;
+                i {
+                    font-size: 26px;
+                    // border: 1px solid white;
+                }
+                span {
+                    // border: 1px solid white;
+                }
+            }
+        }
+    }
+    &-content {
+        display: none;
+        position: relative;
+        border: 1px solid red;
+        background-color: rgba(0, 0, 0, 0.3);
+        min-height: 100px;
+        color: white;
+    }
+
+    
+}
+

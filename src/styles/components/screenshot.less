@@ -1,0 +1,22 @@
+@screenshot-prefix-cls: ~"@{css-prefix}screenshot";
+
+.@{screenshot-prefix-cls} {
+  width:100%;
+  height: 100%;
+
+  &-btn-box {
+    height: 20%;
+    input {
+      min-width: 100px;
+      min-height: 30px;
+    }
+  }
+  &-content {
+    height: 80%;
+    padding: 10px;
+    .-imgBox {
+      height: 100%;
+      border: 1px solid #282C34;
+    }
+  }
+}

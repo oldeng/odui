@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+            <title>
+                iView test page
+            </title>
+      <!-- <link href="/test/dist/main.css" rel="stylesheet"> -->
+        <style>
+          #app {
+            width: 100%;
+            height: 100%;
+          }
+          .panel-wraper {
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            flex-direction: row;
+            flex-wrap: wrap;
+            width: 100%;
+            height: 100%;
+          }
+
+          .div-left {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            margin-left: 20px;
+            margin-top: 5px;
+            margin-bottom: 5px;
+          }
+
+          .div-right {
+            margin-right: 20px;
+            margin-top: 0;
+            margin-top: 5px;
+            margin-bottom: 5px;
+            width: 60px;
+            height: 60px;
+            display: flex;
+          }
+        </style>
+        </meta>
+
+    </head>
+    <body>
+        <div id="app">
+            <layout>
+                <o-header>
+                    <div style="position: relative;width: 300px; margin-left: 150px; z-index: 2;">
+                        <menutabs>
+                            <mpanel icon="iconfont icon-zhuzhuangtu4" label="菜单一" style="width: 100%; height: 100%;">
+                                <!-- <i class="iconfont icon-shezhi "></i> -->
+                                <!-- <i class="iconfont icon-msnui-map-locate"></i> -->
+                                <!-- <i class="ivu-icon ivu-icon-checkmark"></i> -->
+                                <div class="panel-wraper">
+                                    <div class="div-left"></div>
+                                    <div class="div-right"></div>
+                                    <div class="div-right"></div>
+                                </div>
+                            </mpanel>
+                            <mpanel icon="iconfont icon-zhuzhuangtu4" label="菜单二">
+                                <div>菜单二</div>
+                            </mpanel>
+                        </menutabs>
+                    </div>
+                </o-header>
+                <o-sider ref="left" style="position: absolute; left:0; bottom: 0; top: 70px; overflow: auto; ">
+                    <sidebar :items="items" :parent="{ width: '150px', node: left }" @change-tab="changeTab" @expand="expandHandler">
+                    </sidebar>
+                </o-sider>
+                <o-content ref="content" style="left: 150px;">
+                  <router-view></router-view>
+                </o-content>
+            </layout>
+        </div>
+    </body>
+</html>
+
+<!-- <script type="text/javascript" src="/test/dist/vendor.js"></script>
+    <script type="text/javascript" src="/test/dist/main.js"></script> -->
