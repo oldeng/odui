@@ -70,29 +70,22 @@ export default {
       type: Number,
       default: 0
     },
-    vWidth: {
-      type: Number
-      // default: 300
-    },
-    vHeight: {
-      type: [Number, String]
-      // default: '100%'
-    },
     rate: {
       type: [Number]
     }
   },
   computed: {
     contentStyle: function() {
-      //计算缩放
-      this.scale();
       return {
-        width: this.vWidth + "px",
-        height: this.vHeight + "px"
+        width: '100%',
+        height: '100%'
       };
     }
   },
   watch: {
+    rate () {
+      this.scale();
+    },
     vWidth() {
       this.setLeftTop();
     },
@@ -109,20 +102,20 @@ export default {
       this.barVMain = this.$refs.barVMain;
       this.barH = this.$refs.barH;
       this.barHMain = this.$refs.barHMain;
+      this.main = this.list.children[0];
 
       this._set();
       this._refresh();
     },
     //设置画布可视区宽高
-    _setViewSize() {
-      let parentContent = this.$parent.$el;
-      this.width = parentContent.offsetWidth;
-      this.height = parentContent.offsetHeight;
-    },
     // 设置参数
     _set() {
       this.mouse = {}; // mouse对象
       this.wrapper.style.position = "relative";
+      this.list.children[0].style.position = 'absolute';
+      this.scale();
+      this.main.style.left = -(this.mainW - (this.rate * this.mainW)) / 2 +'px';
+      this.main.style.top = -(this.mainH - (this.rate * this.mainH)) / 2 + 'px';
     },
     // 计算刷新
     _refresh() {
@@ -130,8 +123,11 @@ export default {
       this.wrapperW = this.wrapper.offsetWidth;
       this.wrapperH = this.wrapper.offsetHeight;
       //内容宽高
-      this.listH = this.list.children[0].offsetHeight;
-      this.listW = this.list.children[0].offsetWidth;
+      this.listH = this.list.offsetHeight;
+      this.listW = this.list.offsetWidth;
+      //用户自定义容器大小
+      this.mainW = this.main.offsetWidth;
+      this.mainH = this.main.offsetHeight;
       //横向滚动条宽高
       this.barHW = this.barH.offsetWidth;
       this.barHH = this.barH.offsetHeight;
@@ -139,19 +135,18 @@ export default {
       //纵向滚动条宽高
       this.barVW = this.barV.offsetWidth;
       this.barVH = this.barV.offsetHeight;
+      this.barVMainH = this.barVMain.offsetHeight;
       /**
        * 横向
        */
       if (this.horizontal) {
         this.horizontalShow = true;
-        this.barHMain.style.width = `${(this.wrapperW / this.listW) *
-          this.barHW}px`;
+        this.barHMain.style.width = `${(this.wrapperW / this.listW) *this.barHW}px`;
         this.barHMainWidth = (this.wrapperW / this.listW) * this.barHW;
-
         this.$nextTick(() => {
+          //center模式
           if (this.pattern === "center") {
-            this.barHMain.style.left =
-              (this.wrapperW - this.barHMainWidth) / 2 + "px";
+            this.barHMain.style.left = (this.wrapperW - this.barHMainWidth) / 2 + "px";
             this.mouse.nowX = (this.wrapperW - this.barHMainWidth) / 2;
           }
           this.barMinX = this.barH.getBoundingClientRect().left;
@@ -162,35 +157,19 @@ export default {
        * 纵向
        */
       if (this.vertical) {
-        this.verticalShow = true;
         // this.resetY();
-        this.$nextTick(() => {
-          if (this.wrapperH <= this.listH) {
-            this.barVMain.style.height =
-              (this.wrapperH / this.listH) * this.wrapperH + "px";
-            if (this.pattern === "center") {
-              this.barVMain.style.top =
-                (this.barVH - this.barVMain.offsetHeight) / 2 + "px";
-            }
-          } else {
-            this.barVMain.style.height = this.barV.style.height =
-              this.wrapperH + "px";
-          }
-          this.barMinY = this.barV.getBoundingClientRect().top;
-          this.barMaxY = Math.floor(this.barV.offsetHeight);
-        });
+        //center模式
+        this.barVMain.style.height = this.barVH * ( this.listH / this.mainH) + 'px';
+        console.log('rfres',this.barVH * ( this.listH / this.mainH));
+        if (this.pattern === 'center') {
+          this.barVMain.style.top = (this.barVH - this.varVMain.style.offsetHeight) / 2 + 'px';
+        }
       }
-      //重置画布可视区大小
-      this.$nextTick(() => {
-        this._setViewSize();
-      });
     },
     _down(event) {
       this.mouse.startX = event.clientX;
       this.mouse.switch = true;
       this.mouse.x = event.target.offsetLeft;
-      console.log("x轴滚动条", "startX", event.clientX);
-      console.log("x轴滚动条", "offsetLeft", event.target.offsetLeft);
       this.barHMain.className += " cur";
     },
     mouseMoveHandler(event) {},
@@ -259,23 +238,21 @@ export default {
       console.log("做边距");
     },
     _scrollY_To(y, type) {
-      this.verticalCur = true;
       let offset = this.mouse.startY - y;
       this.mouse.startY = y;
-      let percent = offset / (this.barVH - this.barVMain.offsetHeight);
-      if (offset < 0) {//向下移动
-        if (this.barVMain.offsetTop > this.barVH - this.barVMain.offsetHeight) {
-          this.barVMain.style.top = this.barVH - this.barVMain.offsetHeight + "px";
-          return;
-        } 
-      } else {//上移动
-        if (this.barVMain.offsetTop < 0) {
-          this.barVMain.style.top = 0;
-          return;
-        } 
+      let percent = offset / (this.barV.offsetHeight - this.barVMain.offsetHeight);
+      this.main.style.top = this.main.offsetTop + percent * (this.main.offsetHeight + 40 - this.list.offsetHeight)+ 'px';
+      console.log('offset', offset);
+      console.log('percent', percent);
+      console.log('barmian', this.barVMain.offsetTop - offset);
+      this.barVMain.style.top = this.barVMain.offsetTop - offset + 'px';
+
+      if (this.barVMain.offsetTop < 0) {
+       this.barVMain.style.top = 0; 
       }
-      this.list.children[0].style.top = this.list.children[0].offsetTop + percent * (this.listH - this.listH * this.rate) + "px";
-      this.barVMain.style.top = this.barVMain.offsetTop - offset + "px";
+      if(this.barVMain.offsetTop > this.barVH - this.barVMainH) {
+        this.barVMain.style.top = this.barVH - this.barVMainH + 'px';
+      }
     },
     _animated(el, direction) {
       clearTimeout(this.timer);
@@ -318,54 +295,26 @@ export default {
     },
     scale() {
       this.$nextTick(() => {
-        let widthRate = 1;
-        let heightRate = 1;
-        if (
-          this.$refs["wrapper"].offsetWidth < this.$refs["list"].offsetWidth
-        ) {
-          widthRate =
-            this.$refs["wrapper"].offsetWidth / this.$refs["list"].offsetWidth;
-          heightRate =
-            this.$refs["wrapper"].offsetHeight /
-            this.$refs["list"].offsetHeight;
-        }
-        setTimeout(() => {
-          this.$emit(
-            "callbacks",
-            widthRate < heightRate ? widthRate : heightRate
-          );
-        }, 1000);
+        this.list.children[0].style.transform = `scale(${this.rate},${this.rate})`;
       });
     },
     setLeftTop() {
-      this.$nextTick(() => {
-        this.$refs["list"].style.left =
-          (this.$refs["wrapper"].offsetWidth - this.$refs["list"].offsetWidth) /
-            2 +
-          "px";
-        this.$refs["list"].style.top =
-          (this.$refs["wrapper"].offsetHeight -
-            this.$refs["list"].offsetHeight) /
-            2 +
-          "px";
-      });
     }
   },
   mounted() {
     this.$nextTick(() => {
+      this._initScroll();
       window.addEventListener("mousemove", this._mousemove);
       window.addEventListener("mouseup", this._mouseup);
       this.$refs["wrapper"].addEventListener("mouseenter", event => {
         console.log("鼠标进入更新滚动条");
-        if (this.pattern !== "center") {
-          this._refresh();
-        }
+        this._refresh();
       });
       this.vertical
         ? this.$refs.wrapper.addEventListener("wheel", this._wheel)
         : "";
       window.onresize = () => {
-        this._refresh();
+        // this._refresh();
         this.horizontal ? this._scrollX_To(this.mouse.nowX, "set") : "";
         this.vertical ? this._scrollY_To(this.mouse.nowY, "set") : "";
       };
@@ -384,11 +333,8 @@ export default {
     });
   },
   updated() {
-    if (!this.inited) {
-      this._initScroll();
-      this._setViewSize();
-      this.inited = true;
-    }
+    this.mainW = this.main.offsetWidth;
+    this.mainH = this.main.offsetHeight;
   },
   destroyed() {
     window.removeEventListener("mouseup", this._mouseup);
@@ -400,6 +346,7 @@ export default {
 
 <style lang="less" scoped>
 .scroll-wrap {
+  box-sizing: border-box;
   padding-bottom: 0px;
   position: relative;
   height: 100%;
@@ -412,6 +359,7 @@ export default {
 
   .scroll-wrap-content {
     left: 0;
+    top: 0;
     border: 1px solid forestgreen;
     padding: 10px;
     position: absolute;
