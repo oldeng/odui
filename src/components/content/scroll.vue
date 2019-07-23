@@ -131,7 +131,7 @@ export default {
       //横向滚动条宽高
       this.barHW = this.barH.offsetWidth;
       this.barHH = this.barH.offsetHeight;
-      this.barHMainWidth = this.barHMain.offsetWidth;
+      this.barHMainW = this.barHMain.offsetWidth;
       //纵向滚动条宽高
       this.barVW = this.barV.offsetWidth;
       this.barVH = this.barV.offsetHeight;
@@ -141,17 +141,7 @@ export default {
        */
       if (this.horizontal) {
         this.horizontalShow = true;
-        this.barHMain.style.width = `${(this.wrapperW / this.listW) *this.barHW}px`;
-        this.barHMainWidth = (this.wrapperW / this.listW) * this.barHW;
-        this.$nextTick(() => {
-          //center模式
-          if (this.pattern === "center") {
-            this.barHMain.style.left = (this.wrapperW - this.barHMainWidth) / 2 + "px";
-            this.mouse.nowX = (this.wrapperW - this.barHMainWidth) / 2;
-          }
-          this.barMinX = this.barH.getBoundingClientRect().left;
-          this.barMaxX = Math.floor(this.barH.offsetWidth);
-        });
+        this.barHMain.style.width = this.barHW * (this.listW / this.mainW) + 'px';
       }
       /**
        * 纵向
@@ -210,48 +200,75 @@ export default {
       this._scrollY_To(even.clientY - this.barVMain.offsetHeight * 0.5);
     },
     _scrollX_To(vx, type) {
-      this.horizontalCur = true;
       let offset = vx - this.mouse.startX;
       this.mouse.startX = vx;
-      let scrollWidth = this.$refs["barVMain"].offsetWidth;
+      let percent = offset / (this.barHW - this.barHMainW);
       if (offset > 0) {
-        //向右移动  barMaxX:最大右移动至
-        this.mouse.offset = offset;
-        if (this.barHMain.offsetLeft > this.barHW - this.barHMainWidth) {
-          this.barHMain.style.left = this.barHW - this.barHMainWidth + "px";
+        //滚动条向右移动
+        if (this.barHMain.offsetLeft > this.barHW - this.barHMainW) {
+          this.barHMain.style.left = this.barHW - this.barHMainW + 'px';
         } else {
-          this.barHMain.style.left = this.barHMain.offsetLeft + offset + "px";
+          this.barHMain.style.left = this.barHMain.offsetLeft + offset + 'px';
+          if (this.main.offsetLeft < this.barHW - this.mainW) {
+            this.main.style.left = this.barHW - this.mainW + 'px';
+          } else {
+            this.main.style.left = this.main.offsetLeft + percent * (this.barHW - this.mainW) + 'px';
+          }
         }
+        console.log('向右移动');
       } else {
         //向左移动
         if (this.barHMain.offsetLeft < 0) {
-          this.barHMain.style.left = 0 + "px";
+          this.barHMain.left = 0;
         } else {
-          this.barHMain.style.left = this.barHMain.offsetLeft + offset + "px";
+          this.barHMain.style.left = this.barHMain.offsetLeft + offset + 'px';
+          if (this.main.offsetLeft < this.barHW - this.mainW) {
+            this.main.style.left = this.barHW - this.mainW + 'px';
+          } else {
+            this.main.style.left = this.main.offsetLeft + percent * (this.barHW - this.mainW) + 'px';
+          }
         }
+        console.log('向左移动');
       }
-      this.list.children[0].style.left =
-        this.list.children[0].offsetLeft +
-        (-offset / (this.wrapperW - this.barHMainWidth)) * this.listW +
-        "px";
-      console.log("比例", -offset / this.wrapperW);
-      console.log("做边距");
     },
     _scrollY_To(y, type) {
       let offset = this.mouse.startY - y;
       this.mouse.startY = y;
+      if (Math.abs(offset) < 1) {
+        return;
+      }
       let percent = offset / (this.barV.offsetHeight - this.barVMain.offsetHeight);
-      this.main.style.top = this.main.offsetTop + percent * (this.main.offsetHeight + 40 - this.list.offsetHeight)+ 'px';
+      
       console.log('offset', offset);
       console.log('percent', percent);
       console.log('barmian', this.barVMain.offsetTop - offset);
-      this.barVMain.style.top = this.barVMain.offsetTop - offset + 'px';
-
-      if (this.barVMain.offsetTop < 0) {
-       this.barVMain.style.top = 0; 
-      }
-      if(this.barVMain.offsetTop > this.barVH - this.barVMainH) {
-        this.barVMain.style.top = this.barVH - this.barVMainH + 'px';
+      
+      if (offset > 0) {
+        //向下移动
+        if(this.barVMain.offsetTop < 0) {
+                this.barVMain.style.top = 0;
+        } else {
+          console.log('下移动');
+          if (this.main.offsetTop > 0) {
+            this.main.style.top = 0;
+          } else {
+            this.main.style.top = this.main.offsetTop + percent * (this.main.offsetHeight + 40 - this.list.offsetHeight)+ 'px';
+            this.barVMain.style.top = this.barVMain.offsetTop - offset + 'px';
+          }
+        }
+      } else {
+        //向上移动
+        if (this.barVMain.offsetTop > this.barVH - this.barVMainH) {
+          this.barVMain.style.top = this.barVH - this.barVMainH + 'px'; 
+        } else {
+          console.log('上移动');
+          if (this.main.offsetTop < this.barVH - this.mainH) {
+            this.main.style.top = this.barVH - this.mainH + 'px';
+          } else {
+            this.main.style.top = this.main.offsetTop + percent * (this.main.offsetHeight + 40 - this.list.offsetHeight)+ 'px';
+            this.barVMain.style.top = this.barVMain.offsetTop - offset + 'px';
+          }
+        }
       }
     },
     _animated(el, direction) {
@@ -361,8 +378,9 @@ export default {
     left: 0;
     top: 0;
     border: 1px solid forestgreen;
-    padding: 10px;
+    // padding: 10px;
     position: absolute;
+    overflow: hidden;
   }
 }
 .scroll-bar {
