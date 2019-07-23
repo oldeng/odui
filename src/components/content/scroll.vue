@@ -83,9 +83,6 @@ export default {
     }
   },
   watch: {
-    rate () {
-      this.scale();
-    },
     vWidth() {
       this.setLeftTop();
     },
@@ -103,8 +100,6 @@ export default {
       this.barH = this.$refs.barH;
       this.barHMain = this.$refs.barHMain;
       this.main = this.list.children[0];
-
-      this._set();
       this._refresh();
     },
     //设置画布可视区宽高
@@ -112,10 +107,11 @@ export default {
     _set() {
       this.mouse = {}; // mouse对象
       this.wrapper.style.position = "relative";
-      this.list.children[0].style.position = 'absolute';
-      this.scale();
-      this.main.style.left = -(this.mainW - (this.rate * this.mainW)) / 2 +'px';
-      this.main.style.top = -(this.mainH - (this.rate * this.mainH)) / 2 + 'px';
+      this.main.style.position = 'absolute';
+      if (this.pattern === 'center') {
+        this.main.style.left = -(this.mainW - this.listW) / 2 +'px';
+        this.main.style.top = - (this.mainH - this.listH) / 2 + 'px';
+      }
     },
     // 计算刷新
     _refresh() {
@@ -136,23 +132,31 @@ export default {
       this.barVW = this.barV.offsetWidth;
       this.barVH = this.barV.offsetHeight;
       this.barVMainH = this.barVMain.offsetHeight;
+
+      if (!this.inited) {
+        this._set();
+        this.inited = true;
+      }
       /**
        * 横向
        */
       if (this.horizontal) {
         this.horizontalShow = true;
         this.barHMain.style.width = this.barHW * (this.listW / this.mainW) + 'px';
+        
+        //center模式
+        if (this.pattern === 'center') {
+          this.barHMain.style.left = (this.barHW - this.barHMainW) / 2 + 'px';
+        }
       }
       /**
        * 纵向
        */
       if (this.vertical) {
-        // this.resetY();
-        //center模式
         this.barVMain.style.height = this.barVH * ( this.listH / this.mainH) + 'px';
         console.log('rfres',this.barVH * ( this.listH / this.mainH));
         if (this.pattern === 'center') {
-          this.barVMain.style.top = (this.barVH - this.varVMain.style.offsetHeight) / 2 + 'px';
+          this.barVMain.style.top = (this.barVH - this.barVMain.offsetHeight) / 2 + 'px';
         }
       }
     },
@@ -171,13 +175,15 @@ export default {
       this.mouse.startY = even.clientY;
       this.mouse.switchY = true;
     },
-    _enter() {
+    _enter(event) {
       if (this.verticalShow) {
         this.verticalCur = true;
       }
       if (this.horizontalShow) {
         this.horizontalCur = true;
       }
+      this.mouse.startX = event.clientX;
+      this.mouse.startY = event.clientY;
     },
     _leave() {
       this.horizontalCur = false;
@@ -215,7 +221,6 @@ export default {
             this.main.style.left = this.main.offsetLeft + percent * (this.barHW - this.mainW) + 'px';
           }
         }
-        console.log('向右移动');
       } else {
         //向左移动
         if (this.barHMain.offsetLeft < 0) {
@@ -228,7 +233,6 @@ export default {
             this.main.style.left = this.main.offsetLeft + percent * (this.barHW - this.mainW) + 'px';
           }
         }
-        console.log('向左移动');
       }
     },
     _scrollY_To(y, type) {
@@ -239,16 +243,11 @@ export default {
       }
       let percent = offset / (this.barV.offsetHeight - this.barVMain.offsetHeight);
       
-      console.log('offset', offset);
-      console.log('percent', percent);
-      console.log('barmian', this.barVMain.offsetTop - offset);
-      
       if (offset > 0) {
         //向下移动
         if(this.barVMain.offsetTop < 0) {
                 this.barVMain.style.top = 0;
         } else {
-          console.log('下移动');
           if (this.main.offsetTop > 0) {
             this.main.style.top = 0;
           } else {
@@ -261,7 +260,6 @@ export default {
         if (this.barVMain.offsetTop > this.barVH - this.barVMainH) {
           this.barVMain.style.top = this.barVH - this.barVMainH + 'px'; 
         } else {
-          console.log('上移动');
           if (this.main.offsetTop < this.barVH - this.mainH) {
             this.main.style.top = this.barVH - this.mainH + 'px';
           } else {
@@ -270,15 +268,6 @@ export default {
           }
         }
       }
-    },
-    _animated(el, direction) {
-      clearTimeout(this.timer);
-      this.refList.style.transition = direction + " " + this.speed + "ms";
-      el.style.transition = direction + " " + this.speed + "ms";
-      this.timer = setTimeout(() => {
-        el.style.transition = direction + " " + "0ms";
-        this.refList.style.transition = direction + " " + "0ms";
-      }, this.speed);
     },
     _mouseup() {
       if (this.mouse) {
@@ -289,19 +278,14 @@ export default {
       }
     },
     _wheel(event) {
-      //TODO
+      let offset = event.wheelDelta;
+      this._scrollY_To(this.barVMain.offsetTop - offset / 20 );
     },
     _mousemove(event) {
       if (this.mouse && this.mouse.switch) {
-        window.getSelection
-          ? window.getSelection().removeAllRanges()
-          : document.selection.empty(); // 禁止拖动时选中文本
         this._scrollX_To(event.clientX);
       }
       if (this.mouse && this.mouse.switchY) {
-        window.getSelection
-          ? window.getSelection().removeAllRanges()
-          : document.selection.empty(); // 禁止拖动时选中文本
         this._scrollY_To(event.clientY);
       }
       return false;
@@ -309,49 +293,39 @@ export default {
     resetY() {
       this.list.style.top = "0";
       this.barVMain.style.top = "0";
-    },
-    scale() {
-      this.$nextTick(() => {
-        this.list.children[0].style.transform = `scale(${this.rate},${this.rate})`;
-      });
-    },
-    setLeftTop() {
     }
   },
   mounted() {
     this.$nextTick(() => {
-      this._initScroll();
       window.addEventListener("mousemove", this._mousemove);
       window.addEventListener("mouseup", this._mouseup);
       this.$refs["wrapper"].addEventListener("mouseenter", event => {
-        console.log("鼠标进入更新滚动条");
         this._refresh();
       });
-      this.vertical
-        ? this.$refs.wrapper.addEventListener("wheel", this._wheel)
-        : "";
+      this.vertical && this.$refs.wrapper.addEventListener("wheel", this._wheel);
       window.onresize = () => {
-        // this._refresh();
-        this.horizontal ? this._scrollX_To(this.mouse.nowX, "set") : "";
-        this.vertical ? this._scrollY_To(this.mouse.nowY, "set") : "";
+        this.horizontal &&this._scrollX_To(this.mouse.nowX);
+        this.vertical && this._scrollY_To(this.mouse.nowY);
       };
-      let mutationObserver = new MutationObserver(mutations => {
-        mutations.forEach(mutation => {});
-      });
-
-      mutationObserver.observe(this.$refs["list"], {
-        attributes: true,
-        characterData: true,
-        childList: true,
-        subtree: true,
-        attributeOldValue: true,
-        characterDataOldValue: true
-      });
+      // let mutationObserver = new MutationObserver(mutations => {
+      //   mutations.forEach(mutation => {});
+      // });
+      // mutationObserver.observe(this.$refs["list"], {
+      //   attributes: true,
+      //   characterData: true,
+      //   childList: true,
+      //   subtree: true,
+      //   attributeOldValue: true,
+      //   characterDataOldValue: true
+      // });
     });
   },
   updated() {
-    this.mainW = this.main.offsetWidth;
-    this.mainH = this.main.offsetHeight;
+    if (!this.inited) {
+      this._initScroll();
+      this.mainW = this.main.offsetWidth;
+      this.mainH = this.main.offsetHeight;
+    }
   },
   destroyed() {
     window.removeEventListener("mouseup", this._mouseup);
